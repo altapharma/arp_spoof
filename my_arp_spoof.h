@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <sys/ioctl.h>
 #include <net/if.h> 
 #include <unistd.h>
@@ -7,7 +8,9 @@
 #include <arpa/inet.h>    
 #include <stdlib.h>
 #include <pthread.h>
+#include <string.h>
 
+#define SIZE_ETHERNET 14
 /* Ethernet header */
 struct sniff_ethernet {
         
@@ -38,7 +41,7 @@ struct argument {
     u_char my_mac_address[6];
     struct in_addr* my_ip_addr;
     struct in_addr senderIP, targetIP;
-}
+};
 /**************************************************************************************************
                                             get my mac address
 ***************************************************************************************************/
@@ -48,6 +51,7 @@ void get_my_mac(u_char* mac_address)
     struct ifconf ifc;
     char buf[1024];
     int success = 0;
+    int i;
     int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
     if (sock == -1) { /* handle error*/ };
 
@@ -178,11 +182,13 @@ void get_my_mac(u_char* mac_address)
         u_char* packet_req_s, packet_req_t;
         u_char* packet_rply_s, packet_rply_t;
         struct pcap_pkthdr* header;
-        u_char* recv_packet;
+        const u_char* recv_packet;
         struct sniff_ethernet* recv_eth;
         struct arphdr* recv_arp;
         u_char recv_mac_s[6];
         u_char recv_mac_t[6];
+        u_char* recv_packet_tmp;
+        int i;
         arg = (struct argument*) argument;
 
         packet_req_s = mk_req_packet(arg->my_mac_address, arg->my_ip_addr,arg->senderIP);
@@ -241,7 +247,7 @@ void get_my_mac(u_char* mac_address)
 
     if(pcap_sendpacket(arg->handle, packet_req_t, 60) != 0) {
             printf("Packet Send Error.\n");
-            pthread_exit((void *) 0);
+             pthread_exit((void *) 0);
     }
 
     while (1) {
@@ -299,5 +305,28 @@ void get_my_mac(u_char* mac_address)
     
         if(pcap_sendpacket(arg->handle, packet_rply_t, 60) != 0)
             printf("Packet Send Error.\n");
+
+        int res = pcap_next_ex(arg->handle, &header, &recv_packet);
+        if (res == 0) continue;
+        if (res == -1 || res == -2) break;
+        /*
+            -1 if an error occurred 
+            -2 if EOF was reached reading from an offline capture
+        */
+        recv_eth = (struct sniff_ethernet*)recv_packet;
+        if(!memcmp(recv_eth->ether_shost, recv_mac_s, strlen(recv_mac_s))){
+            recv_packet_tmp = (u_char*)recv_packet;
+            memcpy(recv_packet_tmp, recv_mac_t, sizeof(recv_mac_t));
+            memcpy(recv_packet_tmp + sizeof(recv_mac_t), arg->my_mac_address,sizeof(arg->my_mac_address));
+
+            pcap_sendpacket(arg->handle,recv_packet_tmp,60);
+        }
+        else if(!memcmp(recv_eth->ether_shost,recv_mac_t,strlen(recv_mac_t))){
+            recv_packet_tmp = (u_char*)recv_packet;
+            memcpy(recv_packet_tmp,recv_mac_s, sizeof(recv_mac_s));
+            memcpy(recv_packet_tmp + sizeof(recv_mac_s), arg->my_mac_address, sizeof(arg->my_mac_address));
+
+            pcap_sendpacket(arg->handle, recv_packet_tmp,60);
+        }
     }    
 }

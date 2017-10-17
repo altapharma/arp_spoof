@@ -9,7 +9,6 @@
 *											*
 ****************************************************************************************/
 
-#include <stdio.h>
 #include "my_arp_spoof.h"
 
 void usage() {
@@ -25,8 +24,6 @@ int main(int argc, char* argv[])
 		return -1;
   	}
   
-  #define SIZE_ETHERNET 14
-	
   struct in_addr senderIP[3], targetIP[3];
   struct in_addr* my_ip_addr;
   u_char my_mac_address[6];
@@ -49,12 +46,12 @@ int main(int argc, char* argv[])
 	struct argument *arg;
 	arg = (struct argument *)malloc(sizeof(struct argument));
 	inet_pton(AF_INET,argv[(i+1)*2], &senderIP[i].s_addr);
-	inet_pton(AF_I  NET,argv[(i+1)*2 + 1], &targetIP[i].s_addr);
+	inet_pton(AF_INET,argv[(i+1)*2 + 1], &targetIP[i].s_addr);
 	memcpy(arg->handle, handle, sizeof(pcap_t *));
-	memcpy(arg->my_mac_address, my_mac_address, sizeof(u_char*));
-	memcpy(arg->my_ip_addr, my_ip_addr, sizeof(struct in_addr*));
-	memcpy(arg->senderIP, &senderIP[i].s_addr, sizeof(senderIP[i].s_addr));
-	memcpy(arg->targetIP, &targetIP[i].s_addr, sizeof(targetIP[i].s_addr));
-	pthread_create(&thread[i], NULL, modify_arpT, (void *)argument);
+	memcpy(arg->my_mac_address, my_mac_address, ETHER_ADDR_LEN);
+	memcpy(arg->my_ip_addr, my_ip_addr, 4);
+	memcpy(&arg->senderIP.s_addr, &senderIP[i].s_addr, sizeof(senderIP[i].s_addr));
+	memcpy(&arg->targetIP.s_addr, &targetIP[i].s_addr, sizeof(targetIP[i].s_addr));
+	pthread_create(&thread[i], NULL, modify_arpT, (void *)arg);
  }
 } 	
