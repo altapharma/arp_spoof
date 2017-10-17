@@ -21,7 +21,7 @@ struct sniff_ethernet {
 /* ARP Header, (assuming Ethernet+IPv4)            */ 
 #define ARP_REQUEST 1   /* ARP Request             */ 
 #define ARP_REPLY 2     /* ARP Reply               */ 
-  struct arphdr { 
+struct arphdr { 
     u_int16_t htype;    /* Hardware Type           */ 
     u_int16_t ptype;    /* Protocol Type           */ 
     u_char hlen;        /* Hardware Address Length */ 
@@ -111,39 +111,38 @@ void get_my_mac(u_char* mac_address)
                                         make request packet
 ***************************************************************************************************/
 
-    u_char* mk_req_packet(u_char* s_mac, struct in_addr* s_ip, struct in_addr d_ip){
-        struct sniff_ethernet* eth;
-        struct arphdr* arp;
-        u_char* packet_tmp;
+    	u_char* mk_req_packet(u_char* s_mac, struct in_addr* s_ip, struct in_addr d_ip){
+    	struct sniff_ethernet* eth;
+    	struct arphdr* arp;
+    	u_char* packet_tmp;
         
-        eth = (struct sniff_ethernet*)malloc(sizeof(struct sniff_ethernet));
-        arp = (struct arphdr*)malloc(sizeof(struct arphdr));
-        memcpy(eth->ether_dhost,"\xff\xff\xff\xff\xff\xff",ETHER_ADDR_LEN);
-        memcpy(eth->ether_shost,s_mac,ETHER_ADDR_LEN);
-        eth->ether_type = htons(0x0806);
-        arp->htype = htons(0x0001);
-        arp->ptype = htons(0x0800);
-        arp->hlen = 0x06;
-        arp->plen = 0x04;
-        arp->oper = htons(0x0001);
-        memcpy(arp->sha,s_mac,6);
-        memcpy(arp->spa,s_ip,4);
-        memcpy(arp->tha,"\x00\x00\x00\x00\x00\x00",6);
-        memcpy(arp->tpa,&d_ip,4);
-        packet_tmp = (u_char*)malloc(sizeof(struct sniff_ethernet)+sizeof(struct arphdr));
+    	eth = (struct sniff_ethernet*)malloc(sizeof(struct sniff_ethernet));
+    	arp = (struct arphdr*)malloc(sizeof(struct arphdr));
+    	memcpy(eth->ether_dhost,"\xff\xff\xff\xff\xff\xff",ETHER_ADDR_LEN);
+    	memcpy(eth->ether_shost,s_mac,ETHER_ADDR_LEN);
+    	eth->ether_type = htons(0x0806);
+    	arp->htype = htons(0x0001);
+    	arp->ptype = htons(0x0800);
+    	arp->hlen = 0x06;
+    	arp->plen = 0x04;
+    	arp->oper = htons(0x0001);
+    	memcpy(arp->sha,s_mac,6);
+    	memcpy(arp->spa,s_ip,4);
+    	memcpy(arp->tha,"\x00\x00\x00\x00\x00\x00",6);
+    	memcpy(arp->tpa,&d_ip,4);
+	packet_tmp = (u_char*)malloc(sizeof(struct sniff_ethernet)+sizeof(struct arphdr));
 
-        memcpy(packet_tmp,eth,sizeof(struct sniff_ethernet));
-        memcpy(packet_tmp+sizeof(struct sniff_ethernet),arp,sizeof(struct arphdr));
+    	memcpy(packet_tmp,eth,sizeof(struct sniff_ethernet));
+    	memcpy(packet_tmp+sizeof(struct sniff_ethernet),arp,sizeof(struct arphdr));
        
-        printf("packt made\n");
-        return packet_tmp;
+    	return packet_tmp;
        
-    }
+	}	
 
 /**************************************************************************************************
                                         make reply packet
 ***************************************************************************************************/
-    u_char* mk_rply_packet(u_char* s_mac, u_char* d_mac,struct in_addr s_ip,struct in_addr t_ip){
+	u_char* mk_rply_packet(u_char* s_mac, u_char* d_mac,struct in_addr s_ip,struct in_addr t_ip){
         struct sniff_ethernet* eth;
         struct arphdr* arp;
         u_char* packet_tmp;
@@ -169,7 +168,7 @@ void get_my_mac(u_char* mac_address)
         
         return packet_tmp;
        
-    }
+    	}		
 
 /**************************************************************************************************
                                 modify (sender & target)'s arp table 
